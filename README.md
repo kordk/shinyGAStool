@@ -1,29 +1,60 @@
 # shinyGAStool
 shinyGAStool: an open-source user-friendly tool for candidate gene association studies implemented in R-shiny
 
-## Required libraries
-The following libraries must be installed prior to running the code:
-<pre>
-library(shiny)
-library(shinyFiles)
-library(DT)
-library(snpStats)
-library(compiler)
-library(batch)
-install.packages("BiocManager")
-BiocManager::install("snpStats")
-</pre>
+# Installation instructions
 
-## Running the interface
-Run the code
- <pre>
-cd shinyGAStool
-R --vanilla
-source('shinyGeneticsApp.R')
-shinyApp(ui, server)
-</pre>
+## Download the app
+
+Make sure you download the following files & folders, making sure that the files in the demo/ folder are put in a demo/ subfolder where the main application R source file is (shinyGeneticsApp.R):
+
+- shinyGeneticsApp.R
+- data/anno_ccds_hg19.txt.gz  
+- data/anno_gencode_attrs_hg38.txt.gz
+- data/anno_gencode_attrs_hg19.txt.gz
+- data/anno_gencode_basic_hg19.txt.gz
+- data/anno_refFlat_hg19.txt.gz
+- data/anno_ccds_hg38.txt.gz
+- data/anno_gencode_basic_hg38.txt.gz
+- data/anno_refFlat_hg38.txt.gz
+
+You can optionally (recommended) download the demo files from:
+
+- demo/kgp-eur.bed
+- demo/kgp-eur.bim
+- demo/kgp-eur.fam
+- demo/kgp-eur-ldl-pheno.csv
+
+
+## Installing R and/or RStudio Desktop
+
+You can install R from:  
+https://cran.r-project.org/
+
+Or install RStudio for a slightly more polished user interface to R:  
+https://rstudio.com/products/rstudio/
+
+
+## Installing R packages
+
+After launching the newly installed R, from the command prompt, type the following to install necessary dependencies:
+
+    install.packages("shiny")
+    install.packages("shinyFiles")
+    install.packages("DT")
+    install.packages("snpStats")
+    install.packages("compiler")
+
+
+## Launching the app
+
+Navigate to the folder that the shiny app (shinyGeneticsApp.R) is located, and type:
+
+    source("shinyGeneticsApp.R")
+    
+This should launch the interface. A demo dataset is included in the demo directory.
 
 ## Authors
+
 Thomas Hoffmann: Thomas.Hoffmann@ucsf.edu
 
 Kord M. Kober: Kord.Kober@ucsf.edu

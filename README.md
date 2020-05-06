@@ -1,9 +1,15 @@
 # shinyGAStool
 shinyGAStool: an open-source user-friendly tool for candidate gene association studies implemented in R-shiny
 
-# Installation instructions
+## Installation instructions
 
-## Download the app
+### From a Release
+
+Periodically, we provide a release of the tool as a stand-alone Windows executable with an installation tool. Please see the <a href="https://github.com/kordk/shinyGAStool/releases">releases</a> to download the latest version.
+
+### From Source Code
+
+#### Download the app
 
 Make sure you download the following files & folders, making sure that the files in the data/ folder are put in a data/ subfolder where the main application R source file is (shinyGeneticsApp.R):
 
@@ -25,7 +31,7 @@ You can optionally (recommended) download the demo files from (and recommended t
 - demo/kgp-eur-ldl-pheno.csv
 
 
-## Installing R and/or RStudio Desktop
+#### Installing R and/or RStudio Desktop
 
 You can install R from:  
 https://cran.r-project.org/
@@ -34,7 +40,7 @@ Or install RStudio for a slightly more polished user interface to R:
 https://rstudio.com/products/rstudio/
 
 
-## Installing R packages
+#### Installing R packages
 
 After launching the newly installed R, from the command prompt, type the following to install necessary dependencies:
 
@@ -45,7 +51,7 @@ After launching the newly installed R, from the command prompt, type the followi
     install.packages("compiler")
 
 
-## Launching the app
+#### Launching the app
 
 Navigate to the folder that the shiny app (shinyGeneticsApp.R) is located, and type:
 

@@ -47,9 +47,11 @@ After launching the newly installed R, from the command prompt, type the followi
     install.packages("shiny")
     install.packages("shinyFiles")
     install.packages("DT")
-    install.packages("snpStats")
     install.packages("compiler")
 
+    if (!requireNamespace("BiocManager", quietly = TRUE))
+      install.packages("BiocManager")
+    BiocManager::install("snpStats")
 
 #### Launching the app
 

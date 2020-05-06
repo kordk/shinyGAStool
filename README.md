@@ -53,6 +53,9 @@ Navigate to the folder that the shiny app (shinyGeneticsApp.R) is located, and t
     
 This should launch the interface. A demo dataset is included in the demo directory.
 
+Note: If you are running the shiny app from within RStudio, make sure to set the working directory:
+Session -> Set Working Directory -> To Source File Location
+
 ## Authors
 
 Thomas Hoffmann: Thomas.Hoffmann@ucsf.edu

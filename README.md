@@ -5,7 +5,7 @@ shinyGAStool: an open-source user-friendly tool for candidate gene association s
 
 ## Download the app
 
-Make sure you download the following files & folders, making sure that the files in the demo/ folder are put in a demo/ subfolder where the main application R source file is (shinyGeneticsApp.R):
+Make sure you download the following files & folders, making sure that the files in the data/ folder are put in a data/ subfolder where the main application R source file is (shinyGeneticsApp.R):
 
 - shinyGeneticsApp.R
 - data/anno_ccds_hg19.txt.gz  
@@ -17,7 +17,7 @@ Make sure you download the following files & folders, making sure that the files
 - data/anno_gencode_basic_hg38.txt.gz
 - data/anno_refFlat_hg38.txt.gz
 
-You can optionally (recommended) download the demo files from:
+You can optionally (recommended) download the demo files from (and recommended to put in a demo/ subfolder where the main application source file is):
 
 - demo/kgp-eur.bed
 - demo/kgp-eur.bim

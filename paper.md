@@ -7,10 +7,10 @@ tags:
   - R shiny
 authors:
   - name: Thomas J. Hoffmann^[Custom footnotes for e.g. denoting who the corresponding author is can be included like this.]
-    orcid: XXXX
+    #orcid: XXXX
     affiliation: "1, 2, 3" # (Multiple affiliations must be quoted)
   - name: Christine Miaskowski
-    orcid: XXXX
+    orcid: 0000-0001-5170-2027
     affiliation: "3,4" # (Multiple affiliations must be quoted)
   - name: Kord M. Kober
     orcid: 0000-0001-9732-3321
@@ -45,13 +45,31 @@ The need for tools to support current research as well as teach the next generat
 
 We present shinyGAStool, a simple and powerful tool that enables the user to access large genome-wide genotype datasets, genomic annotations, and perform a genetic association analysis on their desktop.
 
-# Implementation and available data
+# Implementation
 ShinyGAStool is written in R (https://www.R-project.org/) and implemented in shiny (https://CRAN.R-project.org/package=shiny), and runs in all major web browsers tested, making the interface comfortable for a wide audience. The package requires the other R packages DT (https://CRAN.R-project.org/package=DT) and snpStats (https://www.bioconductor.org/packages/snpStats) User sample phenotype/metadata are provided as a spreadsheet in a comma-separated value format (CSV) and sample genotypes are provided as binary PLINK files (Figure 1). A user selects the version the human genome reference to use from the annotations provided for the GRCh38/hg19 and GRCh39/hg38 assemblies. The genetic association analysis is performed using either a linear or logistic regression. A user identifies the dependent variable and independent variables from the sample data provided. Loci for evaluation are identified by gene symbol, dbSNP id, and/or chromosomal location. Three gene annotation tables from the UCSC Genome Browser '[@Karolchik:2011; @Rosenbloom:2015]' are provided for symbol selection (i.e., CCDS,`[@Pujar:2018]` RefSeq, `[@OLeary:2016]` and GENCODE `[@Frankish:2019]`). Loci are modeled as doses (i.e., zero, one, or two copies) of the rare allele. Three genetic models are available for testing (i.e., additive, dominant, and recessive).
 
 A release is also provided as a stand-alone binary with installer for Windows using R-portable.
 
+# Usage
+A three-step workflow to perform a genetic association analysis
+
+1. Variable selection
+
+A user will load phenotype (meta) data and identify dependent and independent variables for evaluation (Figure 2A, simulated LDL phenotype data). The sample information is provided in a CSV formatted file including the sample identifier, the outcome of interest, and any additional co-variates to include in the model (e.g., eigenvalues of ancestry informative markers). The user then identifies the variable used to connect with the genotype data (provided in the next step) and the outcome of interest. Finally, the co-variates that are identified are plotted for reference. Summary statistics are provided.
+
+2. Genotype loci selection
+
+A user selects the appropriate annotation data from either the GRCh37/hg19 or the GRCh38/hg38 human reference genome assemblies provided with shinyGAStool (Figure 2B). The study genotype data should be in the common PLINK file format (i.e., bed/bim/fam).[17] The loci for evaluation are then selected by gene, loci name (e.g., dbSNP ‘rs’ number, selectable only from the bim file, to help avoid any typing mistakes), and/or chromosomal region (chromosome and base pair position). When the gene name is provided, the user can select between gene regions (i.e., Transcription start – end, exons, or coding only) and the type of transcript (i.e., all or specific). The option to include loci upstream and downstream of the gene’s named are also provided. Loci can also be selected based on symbol from the CCDS, RefSeq, and/or GENCODE sources. Once the selection is complete, genotypes for these loci are extracted from the user genotype file and summarized in a table (e.g., frequencies). 
+
+3. Genetic association analysis
+
+Finally, the association test is selected and performed (Figure 2C). A user will select either a linear or logistic regression appropriate to the trait characteristics of their outcome and select the genetic model(s) to evaluate. The genetics are modeled as the dosage of the rare allele (as discussed above). The results of the analysis can then be saved as a CSV file.
+
+Conclusion
+ShinyGAStool is a simple and powerful tool that enables the user to access large genome-wide genotype datasets, genomic annotations, and perform a genetic association analysis on their desktop.
+
 # Acknowledgements
 
-This study was supported by the National Cancer Institute (NCI, CA233774). It's contents are solely the reponsibility of the authors and do not represent the official views of the NIH.
+This study was supported by the National Cancer Institute (NCI, CA233774). It's contents are solely the reponsibility of the authors and do not represent the official views of the National Institue of Health (NIH).
 
 # References

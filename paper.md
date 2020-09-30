@@ -57,19 +57,18 @@ _**Genotype loci selection.**_ A user selects the appropriate annotation data fr
 
 _**Genetic association analysis.**_ Finally, the association test is selected and performed (\autoref{fig:fig2}C) (e.g., [@Illi:2012; @Eshragh:2017; @Kober:2016]). A user will select either a linear or logistic regression appropriate to the trait characteristics of their outcome and select the genetic model(s) to evaluate. The genetics are modeled as the dosage of the rare allele (as discussed above). The results of the analysis can then be saved as a CSV file.
 
+![Screenshots of the ShinyGAStool workflow. (A) First, the sample characteristics data are loaded and the sample ID, outcome variable, and covariates are identified. The selected variables are presented in a summary table and figures for exploration. (B) The second step is to select the genome build and identify the loci to extract and evaluate. (C) The final step is to select the regression model and genetic model(s) to perform.\label{fig:fig2}](fig2.png)
+
 # Limitations
 
 Several limitations warrant consideration. Genotype data must be pre-filtered (e.g., call rate, Hardy-Weinberg equilibrium, minor allele frequency). Only PLINK file types are supported for genotype data. Future versions are planned to support for variant call format (VCF) files. Only GRCh37/hg19 and GRCh38/hg38 are provided as annotations. Future versions are planned to support for user-specified annotations (e.g., other human assemblies or other species).
 
 # Conclusion
-ShinyGAStool is a simple and powerful tool that enables the user to access large genome-wide genotype datasets, genomic annotations, and perform a genetic association analysis on their desktop.
 
-![Screenshots of the ShinyGAStool workflow. (A) First, the sample characteristics data are loaded and the sample ID, outcome variable, and covariates are identified. The selected variables are presented in a summary table and figures for exploration. (B) The second step is to select the genome build and identify the loci to extract and evaluate. (C) The final step is to select the regression model and genetic model(s) to perform.\label{fig:fig2}](fig2.png)
+ShinyGAStool is a simple and powerful tool that enables the user to access large genome-wide genotype datasets, genomic annotations, and perform a genetic association analysis on their desktop.
 
 # Acknowledgements
 
 This study was supported by the National Cancer Institute (NCI, CA233774). It's contents are solely the reponsibility of the authors and do not represent the official views of the National Institue of Health (NIH).
-
-
 
 # References

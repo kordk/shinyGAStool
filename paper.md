@@ -53,7 +53,7 @@ _**Variable selection.**_ A user will load phenotype (meta) data and identify de
 
 _**Genotype loci selection.**_ A user selects the appropriate annotation data from either the GRCh37/hg19 or the GRCh38/hg38 human reference genome assemblies provided with shinyGAStool (\autoref{fig:fig2}B). The study genotype data should be in the common PLINK file format (i.e., bed/bim/fam).[@Purcell:2007] The loci for evaluation are then selected by gene, loci name (e.g., dbSNP ‘rs’ number, selectable only from the bim file, to help avoid any typing mistakes), and/or chromosomal region (chromosome and base pair position). When the gene name is provided, the user can select between gene regions (i.e., transcription start – end, exons, or coding only) and the type of transcript (i.e., all or specific). The option to include loci upstream and downstream of the gene’s named are also provided. Loci can also be selected based on symbol from the CCDS, RefSeq, and/or GENCODE sources. Once the selection is complete, genotypes for these loci are extracted from the user genotype file and summarized in a table (e.g., frequencies). 
 
-![An overview of the data flow in the ShinyGAStool.\label{fig:fig1}](fig1.png)
+![An overview of the data flow in the ShinyGAStool.\label{fig:fig1}](fig1.eps)
 
 _**Genetic association analysis.**_ Finally, the association test is selected and performed (\autoref{fig:fig2}C) (e.g., [@Illi:2012; @Eshragh:2017; @Kober:2016]). A user will select either a linear or logistic regression appropriate to the trait characteristics of their outcome and select the genetic model(s) to evaluate. The genetics are modeled as the dosage of the rare allele (as discussed above). The results of the analysis can then be saved as a CSV file.
 

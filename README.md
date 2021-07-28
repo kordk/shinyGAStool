@@ -13,7 +13,7 @@ Periodically, we provide a release of the tool as a stand-alone Windows executab
 
 Make sure you download the following files & folders, making sure that the files in the data/ folder are put in a data/ subfolder where the main application R source file is (shinyGeneticsApp.R, located in the *src* directory on the repository, but download the files to the following directory structure):
 
-- shinyGeneticsApp.R
+- src/shinyGeneticsApp.R
 - data/anno_ccds_hg19.txt.gz  
 - data/anno_gencode_attrs_hg38.txt.gz
 - data/anno_gencode_attrs_hg19.txt.gz

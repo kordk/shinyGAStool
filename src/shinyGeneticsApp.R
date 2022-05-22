@@ -1,5 +1,9 @@
 # shinyGeneticsApp.R
-# Version: 2020-04-13
+# Version: 2022-05-12
+# Authors: Thomas Hoffmann and Kord Kober
+# License: GPL v3
+
+# Try LDLR with 10K boundaries
 
 # Required libraries
 library(shiny)
@@ -7,6 +11,9 @@ library(shinyFiles)
 library(DT)
 library(snpStats)
 library(compiler)
+library(heatmaply)
+# library(plotly) #?
+library(rio)
 
 #library(batch)
 #USE_INTERNAL_BROWSER = 0
@@ -40,6 +47,33 @@ DURATION = 10 # How long error messages should stay displayed
 GA_ALLOWABLE_CHROMOSOMES = 1:22
 
 
+# 2020-05-06 -- NEW, getting the path of this so that you can souce from *anywhere*
+
+library(base)
+
+thisFilePath = function(){
+  fname = ''
+  
+  cArgs = commandArgs(trailingOnly=FALSE)
+  m = grep('--file=', cArgs)
+  if(length(m) > 0){
+    fname = normalizePath(gsub('--file=', '', cArgs[m]))
+  }else{
+    fname = normalizePath(sys.frames()[[1]]$ofile)
+  }
+  
+  paste0(dirname(fname), '/')
+}
+
+SHINY_GAS_TOOL_THIS_FILE_PATH <<- thisFilePath()
+
+print(SHINY_GAS_TOOL_THIS_FILE_PATH)
+
+SHINY_GAS_TOOL_THIS_FILE_PATH <<- gsub("src/$", "", SHINY_GAS_TOOL_THIS_FILE_PATH)
+SHINY_GAS_TOOL_THIS_FILE_PATH <<- gsub("/src$", "", SHINY_GAS_TOOL_THIS_FILE_PATH)
+
+print(SHINY_GAS_TOOL_THIS_FILE_PATH)
+
 # Extra functions
 
 # Read in a plink bim file (has the chr-pos information) into a data.frame
@@ -72,6 +106,8 @@ fix.bim = function(bim){
 # Load in the database of genes. It's not really refFlat anymore, but the name persists in the code
 # build = 'hg19' or 'hg38'
 loadRefFlat = function(build){
+  PATH = SHINY_GAS_TOOL_THIS_FILE_PATH
+  
   # refFlat = read.table(paste0('data/', build, '/refFlat.txt.gz'), stringsAsFactors=FALSE)
   # names(refFlat) = c('geneName','name','chrom','strand','txStart','txEnd','cdsStart','cdsEnd','exonCount','exonStarts','exonEnds')
   # refFlat$chrom = gsub('chr', '', refFlat$chrom)
@@ -83,7 +119,7 @@ loadRefFlat = function(build){
   # 
   # return(refFlat)
   
-  refFlat = read.csv(paste0('data/', build, '/ccds.csv.gz'), stringsAsFactors=FALSE) ## id, chr, posStart, posEnd, plusStrand
+  refFlat = read.csv(paste0(PATH, 'data/', build, '/ccds.csv.gz'), stringsAsFactors=FALSE) ## id, chr, posStart, posEnd, plusStrand
   refFlat = refFlat[is.element(refFlat$chr, GA_ALLOWABLE_CHROMOSOMES), ]
   return(refFlat)
 }
@@ -121,8 +157,10 @@ strrep = function(v, from_eq_to){
 
 # Loads in gene dbs for current build
 loadGeneDB = function(build){
+  PATH = SHINY_GAS_TOOL_THIS_FILE_PATH
+  
   ## ccds$ id, gene, plusStrand, cdsStart, cdsEnd, exonStarts, exonEnds
-  ccds = read.table(paste0('data/anno_ccds_', build, '.txt.gz'), header=TRUE, sep='\t', comment.char='', stringsAsFactors=FALSE)
+  ccds = read.table(paste0(PATH, 'data/anno_ccds_', build, '.txt.gz'), header=TRUE, sep='\t', comment.char='', stringsAsFactors=FALSE)
   # table(ccds$ccds_status)
   ccds = ccds[ccds$ccds_status=='Public', ]
   ccds$id = paste0(ccds$gene, ':', ccds$ccds_id)
@@ -152,7 +190,7 @@ loadGeneDB = function(build){
   
   ## refseq: id, gene, plusStrand, cdsStart, cdsEnd, txStart, txEnd, exonStarts, exonEnds
   #refseq = read.table(paste0('anno_refFlat_', build, '.txt.gz'), header=FALSE, sep='\t', comment.char='', stringsAsFactors=FALSE)
-  refseq = read.table(paste0('data/anno_refFlat_', build, '.txt.gz'), header=FALSE, sep='\t', comment.char='', stringsAsFactors=FALSE, colClasses=c('character', 'character', 'character', 'character', 'integer', 'integer', 'integer', 'integer', 'integer', 'character', 'character'))
+  refseq = read.table(paste0(PATH, 'data/anno_refFlat_', build, '.txt.gz'), header=FALSE, sep='\t', comment.char='', stringsAsFactors=FALSE, colClasses=c('character', 'character', 'character', 'character', 'integer', 'integer', 'integer', 'integer', 'integer', 'character', 'character'))
   names(refseq) = c('gene','id','chr','strand','txStart','txEnd','cdsStart','cdsEnd','exonCount','exonStarts','exonEnds')
   refseq$plusStrand = as.numeric(refseq$strand=='+')
   refseq = refseq[, setdiff(names(refseq), 'exonCount')]
@@ -164,13 +202,13 @@ loadGeneDB = function(build){
   
   ## gencode:
   #g1 = read.table(paste0('anno_gencode_attrs_', build, '.txt.gz'), header=FALSE, sep='\t', comment.char='', stringsAsFactors=FALSE)
-  g1 = read.table(paste0('data/anno_gencode_attrs_', build, '.txt.gz'), header=FALSE, sep='\t', comment.char='', colClasses=c('character', 'character', 'character', 'logical', 'character', 'character', 'character', 'logical', 'character', 'character', 'character', 'integer', 'character', 'character'))
+  g1 = read.table(paste0(PATH, 'data/anno_gencode_attrs_', build, '.txt.gz'), header=FALSE, sep='\t', comment.char='', colClasses=c('character', 'character', 'character', 'logical', 'character', 'character', 'character', 'logical', 'character', 'character', 'character', 'integer', 'character', 'character'))
   names(g1) = c(
     'geneid', 'gene', 'gtype', 'gstatus', 'transcriptId',
     'id', #transcriptName
     'ttype', 'tstatus', 'havanaGene', 'havanaTranscript', 'ccdsId', 'level', 'transcriptClass')
   g1 = g1[, c('gene', 'id', 'transcriptId')]
-  g2 = read.table(paste0('data/anno_gencode_basic_', build, '.txt.gz'), header=FALSE, sep='\t', comment.char='')
+  g2 = read.table(paste0(PATH, 'data/anno_gencode_basic_', build, '.txt.gz'), header=FALSE, sep='\t', comment.char='')
   names(g2) = c(
     'unk', 'transcriptId', 'chr', 'strand', 'txStart', 'txEnd', 'cdsStart', 'cdsEnd', 'exonCount', 'exonStarts', 'exonEnds', 'unk1',
     'id',
@@ -310,8 +348,9 @@ ui = fluidPage(
       shinyFilesButton("phefile", label="Click to select phenotype file...", title="Select phenotype file...", multiple=FALSE),
       textOutput("phefile_selected"),
       selectizeInput("list_id", "ID variable", choices=c(), multiple=!TRUE),
-      selectizeInput("list_pheno", "Phenotype", choices=c(), multiple=!TRUE),
-      selectizeInput("list_covar", "Covariate", choices=c(), multiple=TRUE)
+      selectizeInput("list_pheno", "Phenotype (or time for survival)", choices=c(), multiple=!TRUE),
+      selectizeInput("list_covar", "Covariate", choices=c(), multiple=TRUE),
+      selectizeInput("list_event", "Event (survival only)", choices=c(), multiple=!TRUE)
     ),
     
     # Interactive output
@@ -402,7 +441,13 @@ ui = fluidPage(
       "Second load in your .bim file (plink format), by pressing the 'Click to select genotype file...' button. It is assumed that their is a corresponding .fam and .bed file. This will populate the SNP name selection list.",
       "Third, choose either genes (populated from refSeq.txt from the UCSC genome browser), or SNP names (from your dataset), and then press the 'Extract genotype...' button.",
       #uiOutput("genobar")
-      dataTableOutput("geno_summary")
+      dataTableOutput("geno_summary"),
+      #uiOutput("ld") 
+      #plotOutput("plot_ld")
+      plotlyOutput("plot_ld"),
+      a("For LD in other populations, you might consider LD Link", href="https://ldlink.nci.nih.gov/?tab=ldmatrix"),
+      renderUI("<br>"),
+      a("For a view of gene annotation, you might consider the UCSC genome browser", href="https://genome.ucsc.edu/cgi-bin/hgGateway")
     )
   ),
 
@@ -415,7 +460,8 @@ ui = fluidPage(
     #column(
     #  width=W1,
     sidebarPanel(
-      radioButtons("rb_model", "Model", choices=c("Linear regression", "Logistic regression")),
+      radioButtons("rb_model", "Model", choices=c("Linear regression", "Logistic regression", "Cox PH", "Custom")),
+      textInput("text_custom_model", "Custom model, e.g., lm(outcome ~ g + covariate, data=phe), where g represents the SNP.", ""),
       checkboxGroupInput("cb_gmodel", "Genetic model", choices=c("Additive", "Dominant", "Recessive"), selected=c("Additive")),
       actionButton("button_process", "Run analysis..."),
       #actionButton("button_save", "Save analysis results...")
@@ -428,14 +474,21 @@ ui = fluidPage(
     #  offset=W1,
     mainPanel(
       #uiOutput("phenogenobar")
-      "Choose linear regression for a quantitative trait, and logistic regression for a dichotomous/binary trait. Choose one or more genetic models. Press the 'Run analysis...' button to start the analysis, and 'Save analysis results...' to save those results.",
+      "Choose linear regression for a quantitative trait, logistic regression for a dichotomous/binary trait, cox for survival analysis, or enter a custom R code to analyze any model R can by entering the snp as 'g' (this allows for any other regression command, e.g., lmer, glmer, quantile regression, as well as gene-environment interaction). Choose one or more genetic models. Press the 'Run analysis...' button to start the analysis, and 'Save analysis results...' to save those results.\n",
+      textOutput("text_model"),
       dataTableOutput("analysis_summary"),
-      "Results of the additive, dominant, and recessive models have suffixes of _a, _d, and _r, respectively."
+      "Results of the additive, dominant, and recessive models have suffixes of _a, _d, and _r, respectively.",
+      plotlyOutput("plot_man"),
+      a("For more advanced manhattan (and local manhattan) plots, and a comprehensive look at gwas hits, eqtls, etc., you might consider FUMA.", href="https://fuma.ctglab.nl/"),
+      a("For more advanced plots of a locus, you might consider locuszoom", href="http://locuszoom.org/")
     )
   )
 
 )
 
+
+# Update to rio, now we can handle lots of data formats!
+# https://www.rdocumentation.org/packages/rio/versions/0.5.29
 
 # Shiny: Handling interaction
 # (Main place to harden for errors...)
@@ -443,7 +496,7 @@ server = shinyServer(function(input, output, session){
   #output$phetext = renderPrint({input$phefile})
   
   observe({
-    shinyFileChoose(input, 'phefile', root=getVolumes2(), session=session, filetypes=c('csv'))
+    shinyFileChoose(input, 'phefile', root=getVolumes2(), session=session, filetypes=c('csv', 'psv', 'tsv', 'csvy','sas7bdat', 'sav', 'zsav', 'dta', 'xpt', 'por', 'xls', 'xlsx', 'rds', 'RData', 'rda', 'rec', 'mtp', 'syd', 'dbf', 'orff', 'dif', 'fwf', 'csv.gz', 'parquet', 'wft', 'feather', 'fst', 'json', 'mat', 'ods', 'html', 'xml', 'yml', 'pzfx'))
     #shinyFileChoose(input, 'phefile', root=getVolumes(), defaultRoot='wd', session=session)
     #shinyFileChoose(input, phefile, root=normalizePath(getwd()), session=session)
     if(!is.null(input$phefile)){
@@ -458,7 +511,8 @@ server = shinyServer(function(input, output, session){
         ## Load in the bim, and then set the possible SNP options
         #assign("GA_phe", NULL)
         tryCatch({
-          phe = read.csv(fname, stringsAsFactors=FALSE)
+          #phe = read.csv(fname, stringsAsFactors=FALSE)
+          phe = import(fname)
           assign("GA_phe", phe, envir=.GlobalEnv)
           
           # Temporary, fill in with actual names of data.frame once load in data
@@ -472,6 +526,7 @@ server = shinyServer(function(input, output, session){
           updateSelectizeInput(session=session, "list_id", choices=phenames, server=TRUE)
           updateSelectizeInput(session=session, "list_pheno", choices=phenames, server=TRUE)
           updateSelectizeInput(session=session, "list_covar", choices=phenames, server=TRUE)
+          updateSelectizeInput(session=session, "list_event", choices=phenames, server=TRUE)
           
           # Output a summary of the variables...
           pheSum = data.frame(
@@ -518,7 +573,8 @@ server = shinyServer(function(input, output, session){
             mainPanel(
               dataTableOutput("phe_summary"),
               plotOutput("plot_phe"),
-              plotOutput("plot_covar")
+              plotOutput("plot_covar"),
+              textOutput("text_event")
             )
           })
         }, error=function(e){
@@ -635,6 +691,20 @@ server = shinyServer(function(input, output, session){
       },
       error = function(e){
         showNotification(paste("Error in trying to plot the covariates. If any of those were of character formats, it might need to be numeric... Error:", as.character(e)), type='error', duration=DURATION, session=session)
+      })
+    }
+  })
+
+  observeEvent(input$list_event, {
+    if(!is.null(input$list_event)){
+      tryCatch({
+        event = input$list_event
+        eventv = get("GA_phe")[[event]]
+        outstr = sprintf("Event (vs. censor) variable selected (%s): 0(%i), 1(%i), NA(%i)", event, sum(event==0,na.rm=TRUE), sum(event==1,na.rm=TRUE), sum(is.na(event)))
+        output$text_event = renderText(outstr)
+      },
+      error = function(e){
+        showNotification(paste("Error in trying to summarize the event variable, which is expected to have values 0, 1, and NA if missing. Error:", as.character(e)), type='error', duration=DURATION, session=session)
       })
     }
   })
@@ -802,8 +872,8 @@ server = shinyServer(function(input, output, session){
         ## TODO: better to run HWE only on the controls...
         snpsum = plinkdata$map[, c('snp.name', 'chromosome', 'position', 'allele.1', 'allele.2')]
         cs = col.summary(plinkdata$genotypes)
+        cs$p.HWE = sprintf("%0.2g", 2 * pnorm(abs(cs$z.HWE), lower.tail=FALSE))
         cs = cs[, setdiff(names(cs), c('MAF', 'z.HWE'))] # Confirmed RAF=MAF
-        #cs$p.HWE = 2 * pnorm(abs(cs$z.HWE), lower.tail=FALSE)
         
         ## REFORMAT COLUMNS
         for(k in c('RAF', 'P.AA', 'P.AB', 'P.BB'))
@@ -813,6 +883,84 @@ server = shinyServer(function(input, output, session){
         
         incProgress(0.30, "Rendering final output...")
         output$geno_summary = DT::renderDataTable(DT::datatable(snpsum))
+
+        # NEW 2022-05-11
+        ld.mydata = ld(plinkdata$genotypes, stats=c("D.prime", "R.squared"), depth=ncol(plinkdata$genotypes)-1)
+        #ld.mydata = ld(plinkdata$genotypes, stats=c("R.squared"), depth=nrow(cs)-1)
+        spectrum = rainbow(10, start=0, end=1/6)[10:1]
+        #output$plot_ld = renderPlot(plot(0:1, 0:1, xlab="ld")) # testing
+
+        m.r2 = as.matrix(ld.mydata$R.squared)
+        ltri = lower.tri(m.r2)
+        m.r2[ltri] = t(m.r2)[ltri]
+        diag(m.r2) = 1
+        m.dp = as.matrix(ld.mydata$D.prime)
+        m.dp[ltri] = t(m.dp)[ltri]
+        diag(m.dp) = 1
+        nsnp = nrow(m.r2)
+        m.cell = matrix("", nrow=nsnp, ncol=nsnp)
+        for(i in 1:nsnp)
+          for(j in 1:nsnp)
+            m.cell[i,j] = sprintf(
+              "Variant 1: %s\nVariant 2: %s\nR^2=%0.3f\nD'=%0.3f",
+              rownames(m.r2)[i],
+              colnames(m.r2)[j],
+              m.r2[i,j],
+              m.dp[i,j]
+            )
+        m = m.r2
+        m[lower.tri(m)] = -t(m.dp)[lower.tri(t(m.dp))]
+        
+        #m.cell = as.matrix(as.vector(sprintf("R^2=%0.2f\nD'=%0.2f", m.r2, m.dp)), nrow=nrow(m.r2))
+        #m.cell = as.matrix(paste0("R^2=", sprintfm.r2, '\n', "D'=", m.dp), nrow=nrow(m.r2), ncol=nrow(m.r2))
+        #m[lower.tri(m)] = NA
+        #m = m[ncol(m):1, ]
+        #ncut=100
+
+        rrgb = function(r, g, b)
+          rgb(r/255, g/255, b/255)
+
+        #output$plot_ld = renderPlot(
+        output$plot_ld = renderPlotly(
+          #{
+            heatmaply(
+              m,
+              colors=rrgb(
+                  c(0:255,  rep(255, 255)),
+                  c(0:255,  254:0),
+                  c(rep(255,255),  255:0)
+              ),
+              custom_hovertext = m.cell,
+              dendrogram="none",
+              xlab="", ylab="",
+              main="D' (lower triangle) \\ R^2 (upper triangle)",
+              grid_color="white",
+              grid.width=0.00001,
+              hide_colorbar=!TRUE,
+              labCol = colnames(m),
+              labRow = rownames(m),
+              plot_method = "plotly"   # controls the custom_hovertext!
+            )
+
+            #heatmap(m, Rowv=NA, Colv=NA, col=)
+
+            #image(ld.mydata$R.squared, lwd=0, cuts=9, col.regions=spectrum, colorkey=TRUE, main=expression(R^2), axis=FALSE)
+
+
+            # library(LDheatmap)
+            # LDheatmap(
+            #   plinkdata$genotypes,
+            #   genetic.distances=plinkdata$map$position,
+            #   distances="physical",
+            #   LDmeasure="r",
+            #   title="Pairwise LD with R^2",
+            #   add.map=TRUE, add.key=TRUE,
+            #   geneMapLocation=0.15,
+            #   SNP.name=rownames(plinkdata$map),
+            #   color=NULL
+            # )
+          #}
+        )
       })
     },
     error = function(e){
@@ -828,20 +976,36 @@ server = shinyServer(function(input, output, session){
       #print(r_model)  # "Linear regression", "Logistic regression"
       #print(g_model)  # Additive, Dominant, Recessive
   
-      ga = is.element("Additive", g_model)
-      gd = is.element("Dominant", g_model)
-      gr = is.element("Recessive", g_model)
+      #ga = is.element("Additive", g_model)
+      #gd = is.element("Dominant", g_model)
+      #gr = is.element("Recessive", g_model)
+      ggmods = c(
+      'a'[is.element("Additive", g_model)],
+      'd'[is.element("Dominant", g_model)],
+      'r'[is.element("Recessive", g_model)]
+      )
+
       
       rl = (r_model == "Linear regression")
+      rlogistic = (r_model == "Logistic regression")
+      rcox = (r_model == "Cox PH")
+      rcustom = (r_model == "Custom")
       
       pheno = input$list_pheno
       covar = input$list_covar
+      event = input$list_event
       
       id_var = input$list_id
       
       phe = get("GA_phe")
       
-      phe = phe[complete.cases(phe[, c(pheno, covar)]), ]
+      if(rl || rlogistic){
+        phe = phe[complete.cases(phe[, c(pheno, covar)]), ]
+      }else if(rcox){
+        phe = phe[complete.cases(phe[, c(pheno, covar, event)]), ]
+      }else if(rcustom){
+        ## Nothing done!!!
+      }
       
       plinkdata = get("GA_plinkdata")
       
@@ -854,128 +1018,102 @@ server = shinyServer(function(input, output, session){
       
       G = nrow(plinkdata$map)
       freq = rep(NA, G)
-      fita = fitd = fitr = matrix(NA, nrow=G, ncol=3) # cols are beta, se, p
-      colnames(fita) = c('beta_a', 'se_a', 'p_a')
-      colnames(fitd) = c('beta_d', 'se_d', 'p_d')
-      colnames(fitr) = c('beta_r', 'se_r', 'p_r')
       
-      cmdlin = paste0('cf = summary(lm(', pheno, ' ~ ', paste(c(covar, 'g'), collapse=' + '), ', data=phe))$coefficients')
-      cmdlog = paste0('cf = summary(glm(', pheno, ' ~ ', paste(c(covar, 'g'), collapse=' + '), ', data=phe, family="binomial"))$coefficients')
-      
+      fitl = list()
+
+      cmd = ''
+      pstr = ''
+      coefstr = 'Estimate'
+      sestr = 'Std. Error'
+      if(rl){
+        cmd = paste0('lm(', pheno, ' ~ ', paste(c(covar, 'g'), collapse=' + '), ', data=phe)')
+        pstr = 'Pr(>|t|)'
+      }else if(rlogistic){
+        cmd = paste0('glm(', pheno, ' ~ ', paste(c(covar, 'g'), collapse=' + '), ', data=phe, family="binomial")')
+        pstr = 'Pr(>|z|)'
+      }else if(rcox){
+        cmd = paste0('coxph(Surv(', pheno, ',', event, ') ~ ', paste(c(covar, 'g'), collapse=' + '), ', data=phe)')
+        pstr = 'Pr(>|z|)'
+        coefstr = 'coef'
+        sestr = 'se(coef)'
+      }else if(rcustom){
+        cmd = input$text_custom_model
+      }
+      output$text_model = renderText(paste0("\nMODEL:\n", paste0("", cmd), "\n")) ## The paste0 looks stupid, but otherwise it does it by reference, and the value changes...
+      if(!rcustom)
+        updateTextInput(session, "text_custom_model", value=paste0("", cmd))
+
+      # But then actually want this
+      cmd = paste0("cf = coef(summary(", cmd, "))")
+
       ##m = match(phe$IID, plinkdata$fam$member)
       m = match(phe[[id_var]], plinkdata$fam$member)
       withProgress(message="Analyzing each genotype...", value=0, {
         for(i in 1:G){
           incProgress(1/G)
+
+          curfit = c(snp_index=i) # index so that we can merge in despite crashed models. we don't want to keep this in the final output though
           
           # Pull in the next genotype
           #phe$g = as(plinkdata$genotypes[,i], 'numeric')[m]
-          phe$g = fixplinkgeno(plinkdata$genotypes[,i])[m]
+          gcurrent = fixplinkgeno(plinkdata$genotypes[,i])[m]
+          phe$g = gcurrent 
           
           freq[i] = mean(phe$g, na.rm=TRUE) / 2
-          
-          if(rl){ # Linear regression
-            if(ga){
-              cf = NULL
-              eval(parse(text=cmdlin))
-              #print(cf)
-              if(!is.null(cf) & is.element('g', rownames(cf))){ # sometimes it fails to fit, and sometimes it even fits but drops the g...
-                fita[i, 1] = cf['g', 'Estimate']
-                fita[i, 2] = cf['g', 'Std. Error']
-                fita[i, 3] = cf['g', 'Pr(>|t|)']
+
+          try({
+            for(ggmod in ggmods){ #c('a', 'd', 'r')){
+              # Handle the coding to the genotype
+              if(ggmod == 'd'){
+                phe$g = as.numeric(gcurrent != 0)
+              }else if(ggmod == 'r'){
+                phe$g = as.numeric(gcurrent == 1)
               }
-            }
-            if(gd){
-              gt = phe$g
-              phe$g = as.numeric(phe$g != 0)
-              ## begin: copied from above (fitd instead of fita)
+              # else it's additive, but nothing to be done
+
+              # Fit the model
               cf = NULL
-              eval(parse(text=cmdlin))
-              #print(cf)
-              if(!is.null(cf) & is.element('g', rownames(cf))){ # sometimes it fails to fit, and sometimes it even fits but drops the g...
-                fitd[i, 1] = cf['g', 'Estimate']
-                fitd[i, 2] = cf['g', 'Std. Error']
-                fitd[i, 3] = cf['g', 'Pr(>|t|)']
-              }
-              ## nigeb
-              phe$g = gt
-            }
-            if(gr){
-              gt = phe$g
-              phe$g = as.numeric(phe$g == 1)
-              ## begin: copied from above (fitr instead of fita)
-              cf = NULL
-              eval(parse(text=cmdlin))
-              #print(cf)
-              if(!is.null(cf) & is.element('g', rownames(cf))){ # sometimes it fails to fit, and sometimes it even fits but drops the g...
-                fitr[i, 1] = cf['g', 'Estimate']
-                fitr[i, 2] = cf['g', 'Std. Error']
-                fitr[i, 3] = cf['g', 'Pr(>|t|)']
-              }
-              ## nigeb
-              phe$g = gt
-            }
-            
-          }else{ # logistic regression - similar to above, but cmdlog instead of cmdlin, and |z| instead of |t|
-            if(ga){
-              cf = NULL
-              eval(parse(text=cmdlog))
-              #print(cf)
-              if(!is.null(cf) & is.element('g', rownames(cf))){ # sometimes it fails to fit, and sometimes it even fits but drops the g...
-                #print('hi 1')
-                fita[i, 1] = cf['g', 'Estimate']
-                #print('hi 2')
-                fita[i, 2] = cf['g', 'Std. Error']
-                #print('hi 3')
-                fita[i, 3] = cf['g', 'Pr(>|z|)']
-                #print('hi 4')
-              }
-            }
-            if(gd){
-              gt = phe$g
-              phe$g = as.numeric(phe$g != 0)
-              ## begin: copied from above (fitd instead of fita)
-              cf = NULL
-              eval(parse(text=cmdlog))
-              #print(cf)
-              if(!is.null(cf) & is.element('g', rownames(cf))){ # sometimes it fails to fit, and sometimes it even fits but drops the g...
-                fitd[i, 1] = cf['g', 'Estimate']
-                fitd[i, 2] = cf['g', 'Std. Error']
-                fitd[i, 3] = cf['g', 'Pr(>|z|)']
-              }
-              ## nigeb
-              phe$g = gt
-            }
-            if(gr){
-              gt = phe$g
-              phe$g = as.numeric(phe$g == 1)
-              ## begin: copied from above (fitr instead of fita)
-              cf = NULL
-              eval(parse(text=cmdlog))
-              #print(cf)
-              if(!is.null(cf) & is.element('g', rownames(cf))){ # sometimes it fails to fit, and sometimes it even fits but drops the g...
-                fitr[i, 1] = cf['g', 'Estimate']
-                fitr[i, 2] = cf['g', 'Std. Error']
-                fitr[i, 3] = cf['g', 'Pr(>|z|)']
-              }
-              ## nigeb
-              phe$g = gt
-            }
-          }
-        }
+              #print(cmd) # debug only
+              eval(parse(text=cmd)) # debug only
+              #print(cf) # debug only
+
+              if(!rcustom){
+                ccurfit = c(
+                  beta = cf['g', coefstr],
+                  se = cf['g', sestr],
+                  p = cf['g', pstr]
+                )
+                names(ccurfit) = paste0(names(ccurfit), '_', ggmod)
+
+                curfit = c(curfit, ccurfit)
+              }else{
+                # Stick in the entirety of the results...
+                for(jj in 1:nrow(cf)){
+                  ccurfit = cf[jj,]
+                  names(ccurfit) = paste0(rownames(cf)[jj], "_", colnames(cf), "_", ggmod)
+                  curfit = c(curfit, ccurfit)
+                }
+              }# if(!rcustom)
+            } # for ggmod
+
+            # done a little specially for crashed fits
+            if(length(curfit) > 1)
+              fitl[[length(fitl) + 1]] = curfit
+          })
+        } # for i in 1:G
       })
       
       # Put together the results
       snpres = plinkdata$map[, c('snp.name', 'chromosome', 'position', 'allele.1', 'allele.2')]
-      ####snpres = cbind(snpres, gene = rep(NA, G)) ## FUTURE MAYBE
-      snpres = cbind(snpres, freq.1 = freq)  ## TODO: MAKE SURE THIS IS CODED CORRECTLY...
-      if(ga)
-        snpres = cbind(snpres, fita)
-      if(gd)
-        snpres = cbind(snpres, fitd)
-      if(gr)
-        snpres = cbind(snpres, fitr)
-      
+      snpres = cbind(snpres, freq.1 = freq)
+
+      # TAKE OUT STUFF BELOW, rbind it, and go
+      fitl = as.data.frame(do.call('rbind', fitl), stringsAsFactors=FALSE)
+
+      #print(fitl)
+      #snpres = cbind(snpres, fitl[match(1:nrow(snpres), fitl$snp_index), ])  ## debug, leave in snp_index to make sure merged in properly - check!
+      snpres = cbind(snpres, fitl[match(1:nrow(snpres), fitl$snp_index), setdiff(names(fitl), "snp_index")])
+
       assign('GA_snpres', snpres, envir=.GlobalEnv)
       
       ## REFORMAT COLUMNS, just for the display...
@@ -983,6 +1121,94 @@ server = shinyServer(function(input, output, session){
         snpres[[k]] = sprintf('%0.4g', snpres[[k]])
       
       output$analysis_summary = DT::renderDataTable(DT::datatable(snpres))
+
+        # snpres = get("GA_snpres")
+      pval = "p_a"
+      if(!is.element(pval, names(snpres))){
+        pval = "p_d"
+        if(!is.element(pval, names(snpres))){
+          pval = "p_r"
+          if(!is.element(pval, names(snpres))){
+            pval = names(snpres)[grep("^g[_]Pr[(].*[_]a$", names(snpres))]
+          }
+        }
+      }
+
+      # snpres = get("GA_snpres") ## for debugging the plot only
+      ssnpres = snpres[!is.na(as.numeric(snpres[[pval]])), ]
+
+      chr = ssnpres$chromosome
+      pos = ssnpres$position
+      pvalue = as.numeric(ssnpres[[pval]])
+
+      getGroup = function(chr, pos, dist_break=1e6){
+        group = rep(1, length(chr))
+        for(ij in 2:length(pos)){
+          #print(ij)
+          group[ij] = group[ij-1]
+          distprev = pos[ij] - pos[ij-1]
+          samechr = (chr[ij] == chr[ij-1])
+          #cat("distprev", distprev, "\n")
+          #cat("samechr", samechr, "\n")
+          #cat("distprev", (distprev >= dist_break), "\n")
+          if(!samechr || (distprev >= dist_break)){
+            group[ij] = group[ij-1] + 1
+          }
+        }
+        #print(group)
+        group
+      }
+
+      group = getGroup(chr, pos)
+
+      posadj = pos
+      ngroup = length(unique(group))
+      if(ngroup > 1){
+        max_within_diff = 0
+        for(g in 1:ngroup){
+          wc = which(group == g)
+          lwc = length(wc)
+          ccurpos = pos[wc]
+          cur_diff = max(ccurpos[2:lwc] - ccurpos[1:(lwc-1)])
+          max_within_diff = max(c(max_within_diff, cur_diff))
+        }
+
+        posadj = pos - min(pos)
+        for(g in 2:ngroup){
+          wc = which(group == g)
+          wp = which(group == (g-1))
+          posadj[wc] = posadj[wc] - min(posadj[wc]) + max(posadj[wp]) + 2*max_within_diff #1000
+        }
+      }
+
+      #neglogp = -log(pvalue)
+      #keep = which(!is.na(neglogp) & !is.infinite(neglogp))
+      #print("pvalue")
+      #print(pvalue)
+      #print("-log(pvalue)")
+      #print(-log(pvalue))
+
+      #print(snpres)
+      output$plot_man = renderPlotly(
+        plot_ly(
+          type="scatter",
+          mode="markers",
+          x=posadj, # xlab="Chromosome position",
+          y=-log(pvalue, 10), # ylab=expression(-log[10](p)),
+          text=sprintf("SNP: %s\nChr: %i\nPos: %i\nP: %s", ssnpres$snp.name, ssnpres$chromosome, ssnpres$position, pvalue),
+          marker = list(
+            size=10,
+            #color = 'rgba(255, 182, 193, 0.9)',
+            color=rainbow(ngroup)[group],
+            #line = list(color = 'rgba(152, 0, 0, 0.8)', width=2)
+            line = list(color="black", width=2)
+          )
+        ) %>%
+          layout(
+            xaxis=list(title="Chromosome position (relative, by group)", zerolinecolor='#ffff', zerolinewidth=2, gridcolor='fff'),
+            yaxis=list(title=expression(-log[10](p)), zerolinecolor='#ffff', zerolinewidth=2, gridcolor='fff')
+          )
+      )
     },
     error = function(e){
       showNotification(paste("Error in analyzing the genotypes. Error:", as.character(e)), type='error', duration=DURATION, session=session)

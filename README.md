@@ -48,6 +48,8 @@ After launching the newly installed R, from the command prompt, type the followi
     install.packages("shinyFiles")
     install.packages("DT")
     install.packages("compiler")
+    install.packages("heatmaply")
+    install.packages("rio")
 
     if (!requireNamespace("BiocManager", quietly = TRUE))
       install.packages("BiocManager")

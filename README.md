@@ -4,7 +4,7 @@ shinyGAStool: an open-source user-friendly tool for candidate gene association s
 ## Citation
 Please cite the tool using this website repository and the manuscript:
 
-Hoffman T, Miaskowski C, Kober KM. SoftwareX. In press. ShinyGAStool: A user-friendly tool for candidate gene association studies.
+Hoffmann TJ, Miaskowski C, Kober KM. ShinyGAStool: A user-friendly tool for candidate gene association studies. SoftwareX. 2023;21:101274. doi: 10.1016/j.softx.2022.101274.
 
 ## Installation instructions
 
